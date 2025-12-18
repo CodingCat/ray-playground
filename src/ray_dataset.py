@@ -15,3 +15,12 @@ cubes = evens.flat_map(lambda x: [{"squared": x["squared_data"],
                                     "cube": x["squared_data"] ** 3}])
 sample = cubes.take(10)
 print(sample)
+
+
+result = (
+    ds
+    .map(lambda x: {"name": x["name"], "squared_data": x["data"] ** 2})
+    .filter(lambda x: x["squared_data"] % 2 == 0)
+    .flat_map(lambda x: [{"squared": x["squared_data"], "cube": x["squared_data"] ** 3}])
+)
+result.show(10)

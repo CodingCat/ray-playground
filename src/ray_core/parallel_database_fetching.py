@@ -8,10 +8,8 @@ from ray.runtime_context import get_runtime_context
 # ---------------------------
 # Types
 # ---------------------------
-ItemIndex = int
-ItemValue = str
-RetrieveResult = Tuple[ItemIndex, ItemValue]
-Batch = Sequence[ItemIndex]
+RetrieveResult = Tuple[int, str]
+Batch = Sequence[int]
 BatchResult = List[RetrieveResult]
 
 # ---------------------------
@@ -25,7 +23,7 @@ database: List[str] = [
 # ---------------------------
 # Functions
 # ---------------------------
-def retrieve(item: ItemIndex) -> RetrieveResult:
+def retrieve(item: int) -> RetrieveResult:
     time.sleep(item / 10.0)
     return item, database[item]
 
@@ -35,7 +33,7 @@ def print_runtime(input_data: Sequence[RetrieveResult], start_time: float) -> No
     print(*input_data, sep="\n")
 
 
-def chunked(seq: Sequence[ItemIndex], size: int) -> Iterable[Batch]:
+def chunked(seq: Sequence[int], size: int) -> Iterable[Batch]:
     for i in range(0, len(seq), size):
         yield seq[i : i + size]
 
@@ -65,7 +63,7 @@ def main() -> None:
 
     ray.init(ignore_reinit_error=True)
 
-    indices: List[ItemIndex] = list(range(8))
+    indices: List[int] = list(range(8))
 
     start: float = time.time()
 

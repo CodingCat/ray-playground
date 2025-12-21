@@ -1,16 +1,12 @@
 import time
 import argparse
 from typing import Iterable, List, Sequence, Tuple
+from custom_types import RetrieveResult, Batch, BatchResult
 
 import ray
 from ray.runtime_context import get_runtime_context
 
-# ---------------------------
-# Types
-# ---------------------------
-RetrieveResult = Tuple[int, str]
-Batch = Sequence[int]
-BatchResult = List[RetrieveResult]
+
 
 # ---------------------------
 # Data

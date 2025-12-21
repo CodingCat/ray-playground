@@ -23,9 +23,9 @@ database: List[str] = [
 # ---------------------------
 # Functions
 # ---------------------------
-def retrieve(item: int) -> RetrieveResult:
+def retrieve(item: int, db) -> RetrieveResult:
     time.sleep(item / 10.0)
-    return item, database[item]
+    return item, db[item]
 
 
 def print_runtime(input_data: Sequence[RetrieveResult], start_time: float) -> None:
@@ -39,10 +39,10 @@ def chunked(seq: Sequence[int], size: int) -> Iterable[Batch]:
 
 
 @ray.remote
-def retrieve_batch_task(items: Batch) -> BatchResult:
+def retrieve_batch_task(items: Batch, db) -> BatchResult:
     ctx = get_runtime_context()
     print(f"running items={list(items)}, task_id={ctx.get_task_id()}")
-    return [retrieve(i) for i in items]
+    return [retrieve(i, db) for i in items]
 
 
 # ---------------------------
@@ -63,19 +63,24 @@ def main() -> None:
 
     ray.init(ignore_reinit_error=True)
 
+    db_object_ref = ray.put(database)
+
     indices: List[int] = list(range(8))
 
     start: float = time.time()
 
     refs: List[ray.ObjectRef[BatchResult]] = [
-        retrieve_batch_task.remote(batch)
+        retrieve_batch_task.remote(batch, db_object_ref)
         for batch in chunked(indices, args.batch_size)
     ]
 
-    batched: List[BatchResult] = ray.get(refs)
-    data: List[RetrieveResult] = [x for batch in batched for x in batch]
+    all_data = []
 
-    print_runtime(data, start)
+    while len(refs) > 0:
+        finished, refs = ray.wait(refs, num_returns = 2, timeout = 7.0)
+        data = ray.get(finished)
+        print_runtime(data, start)
+        all_data.extend(data)
 
 
 if __name__ == "__main__":

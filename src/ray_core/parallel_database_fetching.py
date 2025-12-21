@@ -41,7 +41,7 @@ def chunked(seq: Sequence[int], size: int) -> Iterable[Batch]:
 @ray.remote
 def retrieve_batch_task(items: Batch, db) -> BatchResult:
     ctx = get_runtime_context()
-    print(f"running items={list(items)}, task_id={ctx.get_task_id()}")
+    print(f"retrieve_batch_task: running items={list(items)}, task_id={ctx.get_task_id()}")
     return [retrieve(i, db) for i in items]
 
 

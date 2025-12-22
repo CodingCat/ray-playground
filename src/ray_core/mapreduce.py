@@ -11,8 +11,8 @@ def map_function(document: List[str]) -> Iterable[Tuple[str, int]]:
 
 
 @ray.remote
-def mapper(data: List[str], num_partitions: int) -> Sequence[Sequence[Tuple[str, int]]]:
-    result = [[] for _ in range(num_partitions)]
+def mapper(data: List[str], num_partitions: int) -> Sequence[List[Tuple[str, int]]]:
+    result = [list[Tuple[str, int]]() for _ in range(num_partitions)]
     for word_count in map_function(data):
         partition_index = mmh3.hash(word_count[0], signed=False) % num_partitions
         result[partition_index].append(word_count)
@@ -22,7 +22,7 @@ def mapper(data: List[str], num_partitions: int) -> Sequence[Sequence[Tuple[str,
 
 if __name__ == "__main__":
     zen_of_python = subprocess.check_output(["python", "-c", "import this"])
-    corpus = zen_of_python.split()
+    corpus = zen_of_python.decode("utf-8").split()
 
     parser = argparse.ArgumentParser()
     parser.add_argument(

@@ -3,7 +3,7 @@ import subprocess
 import argparse
 import mmh3
 import ray
-from typing import Sequence, Tuple, List
+from typing import Sequence, Tuple, List, Dict
 
 def map_function(document: List[str]) -> Iterable[Tuple[str, int]]:
     for word in document:
@@ -13,11 +13,19 @@ def map_function(document: List[str]) -> Iterable[Tuple[str, int]]:
 @ray.remote
 def mapper(data: List[str], num_partitions: int) -> Sequence[List[Tuple[str, int]]]:
     result = [list[Tuple[str, int]]() for _ in range(num_partitions)]
-    for word_count in map_function(data):
-        partition_index = mmh3.hash(word_count[0], signed=False) % num_partitions
-        result[partition_index].append(word_count)
-    return result
+    for word, count in map_function(data):
+        partition_index = mmh3.hash(word, signed=False) % num_partitions
+        result[partition_index].append((word, count))
+    return tuple(result)
 
+
+@ray.remote
+def reducer(*mapper_output: List[Tuple[str, int]]) -> Dict[str, int]:
+    result: Dict[str, int] = {}
+    for bucket in mapper_output:
+        for word, count in bucket:
+            result[word] = result.setdefault(word, 0) + count
+    return result
 
 
 if __name__ == "__main__":
@@ -48,14 +56,26 @@ if __name__ == "__main__":
     ]
     
     map_results_refs = [
-        mapper.remote(data, num_partitions)
+        mapper.options(num_returns=num_partitions).remote(data, num_partitions)
         for data in partitioned_data
     ]
 
-    map_results = ray.get(map_results_refs)
+    reduce_refs = [
+        reducer.remote(*[map_results_refs[m][p] for m in range(num_input_chunks)])
+        for p in range(num_partitions)
+    ]
 
-    for mapper_idx, partitions in enumerate(map_results):
-        for part_idx, bucket in enumerate(partitions):
-            print(f"Mapper {mapper_idx}, partition {part_idx}: {bucket[:2]}")
+    reduced_dicts: List[Dict[str, int]] = ray.get(reduce_refs)
+
+    final: Dict[str, int] = {}
+    for d in reduced_dicts:
+        final.update(d)
+
+    items = list(final.items())
+    items.sort(key=lambda x: (-x[1], x[0]))
+    print("Top 20:")
+    for w, c in items[:20]:
+        print(w, c)
+
 
 

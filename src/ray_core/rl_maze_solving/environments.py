@@ -37,8 +37,8 @@ class Environment:
                 self.seeker = (self.seeker[0], max(0, self.seeker[1] - 1))
             case 3:
                 self.seeker = (self.seeker[0], min(4, self.seeker[1] + 1))
-            case _:
-                raise ValueError("invalid action")
+            case x:
+                raise ValueError(f"invalid action {x}")
         obs = self.get_observation()
         rew = self.get_reward()
         done = self.is_done()

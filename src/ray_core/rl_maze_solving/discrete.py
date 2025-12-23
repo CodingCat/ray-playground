@@ -5,5 +5,5 @@ class Discrete:
         self.num_actions = num_actions
     
     def sample(self) -> int:
-        return random.randint(0, self.num_actions)
+        return random.randint(0, self.num_actions - 1)
     
